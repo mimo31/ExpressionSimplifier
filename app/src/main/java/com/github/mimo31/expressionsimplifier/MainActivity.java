@@ -5,31 +5,41 @@ import android.content.Intent;
 import android.nfc.FormatException;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.ArrayAdapter;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.view.Menu;
+import android.widget.ListView;
 
 import com.github.mimo31.expressionsimplifier.algorithms.MathExpression;
+
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
     EditText inputEdit;
-    TextView resultText;
+    ListView outputList;
     Toolbar toolbar;
+    ArrayList<String> outputListItems = new ArrayList<String>();
+    ArrayAdapter<String> outputAdapter;
+    // RecyclerView.Adapter recyclerAdapter;
+    // ArrayList<Recycler> // TO BE CONTINUED FROM HERE
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) this.findViewById(R.id.toolbar);
+        Toolbar toolbar = this.findViewById(R.id.toolbar);
         this.setSupportActionBar(toolbar);
         toolbar.setTitle("Expression Simplifier");
-        this.inputEdit = (EditText) this.findViewById(R.id.inputEdit);
-        this.resultText = (TextView) this.findViewById(R.id.resultText);
+        this.inputEdit = this.findViewById(R.id.inputEdit);
+        this.outputList = this.findViewById(R.id.outputList);
+        this.outputAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, this.outputListItems);
+        this.outputList.setAdapter(this.outputAdapter);
         this.toolbar = toolbar;
     }
 
@@ -61,10 +71,17 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
-    public void simplify(View view) {
+    public void process(View view) {
         if (view.getId() == R.id.simplifyButton) {
             String expressionText = this.inputEdit.getText().toString();
-            String result;
+            this.outputListItems.clear();
+            Logic.processInput(expressionText, this);
+            if (this.outputListItems.size() == 0)
+            {
+                this.pushOutput("no results");
+            }
+
+            /*String result;
             try {
                 MathExpression expression = MathExpression.getMathExpression(expressionText);
                 expression = expression.simplify();
@@ -72,15 +89,20 @@ public class MainActivity extends AppCompatActivity {
             } catch (FormatException e) {
                 result = e.getMessage();
             }
-            this.resultText.setText(result);
+            this.resultText.setText(result);*/
+
             InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
         }
     }
 
+    public void pushOutput(String output)
+    {
+        this.outputListItems.add(output);
+    }
+
     public void clear(View view) {
         if (view.getId() == R.id.clearButton) {
-            EditText inputEdit = (EditText)findViewById(R.id.inputEdit);
             inputEdit.setText("");
         }
     }
@@ -89,13 +111,13 @@ public class MainActivity extends AppCompatActivity {
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putString("input", inputEdit.getText().toString());
-        outState.putString("output", resultText.getText().toString());
+        // outState.putString("output", resultText.getText().toString());
     }
 
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         inputEdit.setText(savedInstanceState.getString("input"));
-        resultText.setText(savedInstanceState.getString("output"));
+        // resultText.setText(savedInstanceState.getString("output"));
     }
 }

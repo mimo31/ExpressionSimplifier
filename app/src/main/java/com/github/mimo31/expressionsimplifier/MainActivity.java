@@ -2,10 +2,8 @@ package com.github.mimo31.expressionsimplifier;
 
 import android.content.Context;
 import android.content.Intent;
-import android.nfc.FormatException;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 import android.view.View;
@@ -75,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
         if (view.getId() == R.id.simplifyButton) {
             String expressionText = this.inputEdit.getText().toString();
             this.outputListItems.clear();
-            Logic.processInput(expressionText, this);
+            Logic.processInput(expressionText, this::pushOutput);
             if (this.outputListItems.size() == 0)
             {
                 this.pushOutput("no results");

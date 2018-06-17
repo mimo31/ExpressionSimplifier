@@ -23,28 +23,34 @@ public class Parsing
      * If the input string is malformed, errors are sent through the pushOutput method of the specified MainActivity and this method returns null.
      *
      * @param input the input string to be parsed
-     * @param activity MainActivity to display potential errors
+     * @param displayer displayer to display potential errors
      * @return the parsed mathematical expression (that is of class MInteger, MOperation, or MVariable) or null when input is malformed
      */
-    public static Object tryParse(String input, MainActivity activity)
+    public static Object tryParse(String input, TextDisplayer displayer)
     {
-        ParseToken[] tokens = tokenize(input, activity);
+        ParseToken[] tokens = tokenize(input, displayer);
 
         if (tokens == null)
             return null;
 
-        if (resolveDecimals(tokens, input, activity))
+        if (resolveDecimals(tokens, input, displayer))
             return null;
 
-        if (resolveMixed(tokens, input, activity))
+        if (resolveMixed(tokens, input, displayer))
             return null;
 
         tokens = condense(tokens);
 
-        if (assignBrackets(tokens, input, activity))
+        if (tokens.length == 0)
+        {
+            displayer.display("No input.");
+            return null;
+        }
+
+        if (assignBrackets(tokens, input, displayer))
             return null;
 
-        Object expression = resolveOperators(tokens, 0, tokens.length, input, activity);
+        Object expression = resolveOperators(tokens, 0, tokens.length, input, displayer);
 
         return expression;
     }
@@ -59,14 +65,14 @@ public class Parsing
      *
      * This method is recursive: it calls itself when there are brackets among the tokens.
      *
-     * @param tokens the array of tokens
+     * @param tokens the array of tokens, shall not be of length 0
      * @param startIndex the first index of the array of tokens to be dealt with (inclusive)
      * @param endIndex the one after the last index of the array of tokens to be dealt with (i.e. endIndex itself is exclusive)
      * @param input the very original string the user entered
-     * @param activity the activity to send errors to
+     * @param displayer the displayer to send errors to
      * @return the mathematical object built from the specified subarray of the tokens array or null if the array is malformed
      */
-    private static Object resolveOperators(ParseToken[] tokens, int startIndex, int endIndex, String input, MainActivity activity)
+    private static Object resolveOperators(ParseToken[] tokens, int startIndex, int endIndex, String input, TextDisplayer displayer)
     {
         if (startIndex == endIndex)
         {
@@ -74,7 +80,7 @@ public class Parsing
 
             int originalIndex = tokens[startIndex].originalStartIndex;
             String usage = input.substring(Math.max(0, originalIndex - 3), Math.min(input.length(),originalIndex + 4));
-            activity.pushOutput("Parsing error.\nIllegal syntax. Empty expression near \"" + usage + "\".");
+            displayer.display("Parsing error.\nIllegal syntax. Empty expression near \"" + usage + "\".");
             return null;
         }
 
@@ -98,7 +104,7 @@ public class Parsing
 
                 int originalIndex = tokens[startIndex].originalStartIndex;
                 String usage = input.substring(Math.max(0, originalIndex - 3), Math.min(input.length(),originalIndex + 4));
-                activity.pushOutput("Parsing error.\nIllegal syntax. Expression starting with an operator near \"" + usage + "\".");
+                displayer.display("Parsing error.\nIllegal syntax. Expression starting with an operator near \"" + usage + "\".");
                 return null;
             }
         }
@@ -109,11 +115,11 @@ public class Parsing
 
             int originalIndex = tokens[endIndex - 1].originalStartIndex;
             String usage = input.substring(Math.max(0, originalIndex - 3), Math.min(input.length(),originalIndex + 4));
-            activity.pushOutput("Parsing error.\nIllegal syntax. Expression ending with an operator near \"" + usage + "\".");
+            displayer.display("Parsing error.\nIllegal syntax. Expression ending with an operator near \"" + usage + "\".");
             return null;
         }
 
-        // calculate the right value for valuesCount and check that the value elements without an operator in between can be multiplied togetherd
+        // calculate the right value for valuesCount and check that the value elements without an operator in between can be multiplied together
         for (int i = startIndex; i < endIndex; i++)
         {
             ParseToken token = tokens[i];
@@ -134,7 +140,7 @@ public class Parsing
 
                         int originalIndex = token.originalStartIndex;
                         String usage = input.substring(Math.max(0, originalIndex - 3), Math.min(input.length(),originalIndex + 4));
-                        activity.pushOutput("Parsing error.\nIllegal syntax. No operator specified near \"" + usage + "\".");
+                        displayer.display("Parsing error.\nIllegal syntax. No operator specified near \"" + usage + "\".");
                         return null;
                     }
                 }
@@ -151,7 +157,7 @@ public class Parsing
             {
                 int originalIndex = token.originalStartIndex;
                 String usage = input.substring(Math.max(0, originalIndex - 3), Math.min(input.length(),originalIndex + 4));
-                activity.pushOutput("Parsing error.\nIllegal syntax. Two successive operators near \"" + usage + "\".");
+                displayer.display("Parsing error.\nIllegal syntax. Two successive operators near \"" + usage + "\".");
                 return null;
             }
         }
@@ -223,7 +229,11 @@ public class Parsing
                 else
                 {
                     int closingIndex = ((ParseOpenBracket)token).closingIndex;
-                    value = resolveOperators(tokens, i + 1, closingIndex, input, activity);
+                    value = resolveOperators(tokens, i + 1, closingIndex, input, displayer);
+
+                    if (value == null)
+                        return null;
+
                     skipToIndex = closingIndex;
                 }
                 values[nextValuesIndex] = value;
@@ -399,10 +409,10 @@ public class Parsing
      *
      * @param tokens the array of tokens
      * @param input the very original string of input
-     * @param activity the MainActivity to send error messages to
+     * @param displayer the displayer to send error messages to
      * @return whether an error has occurred (true: an error has occurred, false: no error occurred)
      */
-    private static boolean resolveMixed(ParseToken[] tokens, String input, MainActivity activity)
+    private static boolean resolveMixed(ParseToken[] tokens, String input, TextDisplayer displayer)
     {
         // the index of a number sequence that is from the current index separated only by space elements
         // -1 if there is no such index
@@ -471,7 +481,7 @@ public class Parsing
                     {
                         int originalIndex = token.originalEndIndex;
                         String usage = input.substring(Math.max(0, originalIndex - 3), Math.min(input.length(),originalIndex + 4));
-                        activity.pushOutput("Parsing error.\nIllegal syntax. Two decimal sequences without an operator or another form used near \"" + usage + "\".");
+                        displayer.display("Parsing error.\nIllegal syntax. Two decimal sequences without an operator or another form used near \"" + usage + "\".");
                         return true;
                     }
 
@@ -526,10 +536,10 @@ public class Parsing
      *
      * @param tokens the array of tokens
      * @param input the very original string of input
-     * @param activity the MainActivity to send error messages to
+     * @param displayer the displayer to send error messages to
      * @return whether an error has occurred (true: an error has occurred, false: no error occurred)
      */
-    private static boolean resolveDecimals(ParseToken[] tokens, String input, MainActivity activity)
+    private static boolean resolveDecimals(ParseToken[] tokens, String input, TextDisplayer displayer)
     {
         // simply check for a decimal dot token
         for (int i = 0; i < tokens.length; i++)
@@ -565,7 +575,7 @@ public class Parsing
                 {
                     int originalIndex = token.originalStartIndex;
                     String usage = input.substring(Math.max(0, originalIndex - 3), Math.min(input.length(),originalIndex + 4));
-                    activity.pushOutput("Parsing error.\nDecimal dot used in \"" + usage + "\" must be followed by a decimal sequence.");
+                    displayer.display("Parsing error.\nDecimal dot used in \"" + usage + "\" must be followed by a decimal sequence.");
                     return true;
                 }
 
@@ -646,10 +656,10 @@ public class Parsing
      *
      * @param tokens the array of tokens
      * @param input the very original string of input
-     * @param activity the MainActivity to send error messages to
+     * @param displayer the displayer to send error messages to
      * @return whether an error has occurred (true: an error has occurred, false: no error occurred)
      */
-    private static boolean assignBrackets(ParseToken[] tokens, String input, MainActivity activity)
+    private static boolean assignBrackets(ParseToken[] tokens, String input, TextDisplayer displayer)
     {
         // indexes of opening brackets that have been encountered and are prepared to be assigned to a closing bracket
         Stack<Integer> openBrackIndexes = new Stack<Integer>();
@@ -673,7 +683,7 @@ public class Parsing
 
                     int originalIndex = tokens[i].originalStartIndex;
                     String usage = input.substring(Math.max(0, originalIndex - 3), Math.min(input.length(), originalIndex + 4));
-                    activity.pushOutput("Parsing error.\nExtra closing bracket used in \"" + usage + "\".");
+                    displayer.display("Parsing error.\nExtra closing bracket used in \"" + usage + "\".");
                     return true;
                 }
 
@@ -706,7 +716,7 @@ public class Parsing
                 message = "Parsing error.\n " + openBrackIndexes.size() + " extra closing brackets. One of them used in \"" + usage + "\".";
             }
 
-            activity.pushOutput(message);
+            displayer.display(message);
 
             return true;
         }
@@ -724,10 +734,10 @@ public class Parsing
      * * not preceded or followed by another * translates to the multiply token
      *
      * @param input the input string to be parsed
-     * @param activity the MainActivity to send error messages to
+     * @param displayer the displayer to send error messages to
      * @return the parsed array of tokens or null if input is malformed
      */
-    private static ParseToken[] tokenize(String input, MainActivity activity)
+    private static ParseToken[] tokenize(String input, TextDisplayer displayer)
     {
         // the list of already parse tokens
         ArrayList<ParseToken> tokens = new ArrayList<ParseToken>();
@@ -825,7 +835,7 @@ public class Parsing
                         // an unknown character has been encountered
 
                         String usage = input.substring(Math.max(0, i - 3), Math.min(input.length(), i + 4));
-                        activity.pushOutput("Parsing error.\nCharater \"" + curchar + "\" used in \"" + usage + "\" is illegal.");
+                        displayer.display("Parsing error.\nCharater \"" + curchar + "\" used in \"" + usage + "\" is illegal.");
                         return null;
                     }
             }

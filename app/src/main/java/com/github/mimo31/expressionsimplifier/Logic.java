@@ -13,35 +13,35 @@ public class Logic
      * Carries out all required actions to correctly parse, analyse, and process the entered input.
      *
      * @param input the entered input string
-     * @param activity the MainActivity to send the results to
+     * @param displayer the displayer to send the results to
      */
-    public static void processInput(String input, MainActivity activity)
+    public static void processInput(String input, TextDisplayer displayer)
     {
         // comparison to results from before Remake2
         try
         {
-            activity.pushOutput("You would have got " + MathExpression.getMathExpression(input).simplify().toString());
+            displayer.display("You would have got " + MathExpression.getMathExpression(input).simplify().toString());
         }
         catch (Exception e)
         {
-            activity.pushOutput("Internal error: " + e.getMessage());
+            displayer.display("Internal error: " + e.getMessage());
         }
 
         // empty input check
         if (input.length() == 0)
         {
-            activity.pushOutput("No input.");
+            displayer.display("No input.");
             return;
         }
 
         // parsing the input
-        Object expression = Parsing.tryParse(input, activity);
+        Object expression = Parsing.tryParse(input, displayer);
 
         // check for error in parsing
         if (expression == null)
             return;
 
-        activity.pushOutput("Input interpretation:\n" + Printing.print(expression));
+        displayer.display("Input interpretation:\n" + Printing.print(expression));
     }
 
 

@@ -7,8 +7,15 @@ import org.junit.Test;
 
 import java.util.Random;
 
+/**
+ * This class contains unit test methods that test whether the logical mechanism for dealing with mathematical expressions is not throwing exceptions.
+ */
 public class LogicTests
 {
+
+    /**
+     * Tests three simple expressions.
+     */
     @Test
     public void testBasicOperations()
     {
@@ -18,6 +25,9 @@ public class LogicTests
         Logic.processInput("t^2-41", displayer);
     }
 
+    /**
+     * Tests three malformed input strings.
+     */
     @Test
     public void testMalformedInput()
     {
@@ -27,6 +37,9 @@ public class LogicTests
         Logic.processInput("(8*5/4*x)/2.", displayer);
     }
 
+    /**
+     * Tests many randomly generated input strings of length [0, 20).
+     */
     @Test
     public void heavyRandomTest()
     {
@@ -44,6 +57,9 @@ public class LogicTests
         }
     }
 
+    /**
+     * Tests many randomly generated input strings of length [0, 20) with the restriction that none of the characters are necessarily illegal..
+     */
     @Test
     public void heavyRandomCharRestrictedRandomTest()
     {
